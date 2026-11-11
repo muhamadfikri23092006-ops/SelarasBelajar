@@ -8,7 +8,6 @@ def _merge_overlapping_slots(
     if not slot_kosong:
         return []
 
-    # Urutkan slot berdasarkan waktu mulai
     slot_terurut = sorted(slot_kosong, key=lambda x: x[0])
     merged = [slot_terurut[0]]
 
@@ -16,7 +15,6 @@ def _merge_overlapping_slots(
         prev_start, prev_end = merged[-1]
 
         if current_start <= prev_end:
-            # Tumpang tindih atau bersambungan, perbarui waktu selesai akhir
             merged[-1] = (prev_start, max(prev_end, current_end))
         else:
             merged.append((current_start, current_end))
@@ -24,14 +22,13 @@ def _merge_overlapping_slots(
     return merged
 
 
-def susun_jadwal(
+def schedule_blocks(
     estimasi_menit: int,
     slot_kosong: list[tuple[datetime, datetime]],
     tenggat: datetime,
     maks_blok_menit: int = 60,
 ) -> list[tuple[datetime, datetime]]:
     """Menyusun alokasi blok waktu kerja berdasarkan slot kosong dan tenggat."""
-    # Validasi input
     if estimasi_menit < 0:
         raise ValueError("Estimasi menit tidak boleh negatif.")
 
@@ -41,7 +38,6 @@ def susun_jadwal(
     if estimasi_menit == 0 or not slot_kosong:
         return []
 
-    # Merging slot tumpang tindih
     slot_efektif = _merge_overlapping_slots(slot_kosong)
 
     sisa_estimasi = float(estimasi_menit)
@@ -51,7 +47,6 @@ def susun_jadwal(
         if sisa_estimasi <= 0:
             break
 
-        # Potong slot di tenggat
         selesai_efektif = min(selesai, tenggat)
         if mulai >= selesai_efektif:
             continue

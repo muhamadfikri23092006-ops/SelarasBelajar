@@ -1,5 +1,7 @@
-def check_capacity(menit_tersedia: int, total_estimasi_menit: int) -> dict:
+def check_capacity(*, menit_tersedia: int, total_estimasi_menit: int) -> dict:
     """Mengecek apakah kapasitas waktu yang tersedia cukup untuk menangani total estimasi tugas.
+
+    Memaksa pemanggilan menggunakan keyword arguments untuk mencegah kesalahan urutan parameter.
 
     Returns:
         dict: {'cukup': bool, 'selisih': int}
