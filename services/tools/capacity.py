@@ -13,4 +13,4 @@ def check_capacity(menit_tersedia: int, total_estimasi_menit: int) -> dict:
     selisih = menit_tersedia - total_estimasi_menit
     cukup = selisih >= 0
 
-    return {"cukup": cukup, "selisih": selisih}     
+    return {"cukup": cukup, "selisih": selisih}

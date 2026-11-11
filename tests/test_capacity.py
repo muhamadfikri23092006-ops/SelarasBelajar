@@ -17,8 +17,11 @@ def test_kapasitas_kurang():
     assert result == {"cukup": False, "selisih": -30}
 
 
-def test_menit_negatif():
+def test_menit_tersedia_negatif():
     with pytest.raises(ValueError):
         check_capacity(-10, 50)
+
+
+def test_estimasi_menit_negatif():
     with pytest.raises(ValueError):
         check_capacity(50, -10)
