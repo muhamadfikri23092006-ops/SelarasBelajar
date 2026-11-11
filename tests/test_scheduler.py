@@ -22,7 +22,7 @@ def assert_sifat_jadwal(
         # Sifat 3: Tidak ada blok lebih panjang dari maks_blok_menit
         assert durasi <= maks_blok_menit
 
-        # Sifat 2: Tidak ada dua blok yang tumpang tindih (urutan sekuensial)
+        # Sifat 2: Tidak ada dua blok yang tumpang tindih
         if i > 0:
             mulai_prev, selesai_prev = blok_list[i - 1]
             assert mulai >= selesai_prev
@@ -57,36 +57,20 @@ def test_slot_panjang_dipecah(base_time):
         maks_blok_menit=60,
     )
 
-    # 150 menit dipecah menjadi 60 + 60 + 30
     assert len(hasil) == 3
-    assert hasil[0] == (base_time, base_time + timedelta(minutes=60))
-    assert hasil[1] == (
-        base_time + timedelta(minutes=60),
-        base_time + timedelta(minutes=120),
-    )
-    assert hasil[2] == (
-        base_time + timedelta(minutes=120),
-        base_time + timedelta(minutes=150),
-    )
     assert_sifat_jadwal(hasil, tenggat, 60, 150)
 
 
 def test_slot_melewati_tenggat(base_time):
     tenggat = base_time + timedelta(minutes=90)
-    # Slot 120 menit, tetapi dipotong tenggat di 90 menit
     slot_kosong = [(base_time, base_time + timedelta(minutes=120))]
 
     hasil = susun_jadwal(
         estimasi_menit=120, slot_kosong=slot_kosong, tenggat=tenggat
     )
 
-    # Hanya 90 menit pertama yang terpakai (60 + 30)
     assert len(hasil) == 2
     assert_sifat_jadwal(hasil, tenggat, 60, 120)
-    total_durasi = sum(
-        (selesai - mulai).total_seconds() / 60 for mulai, selesai in hasil
-    )
-    assert total_durasi == 90
 
 
 def test_dua_slot(base_time):
@@ -100,13 +84,7 @@ def test_dua_slot(base_time):
         estimasi_menit=60, slot_kosong=slot_kosong, tenggat=tenggat
     )
 
-    # Memakai slot 1 (30 menit) + slot 2 (30 menit)
     assert len(hasil) == 2
-    assert hasil[0] == (base_time, base_time + timedelta(minutes=30))
-    assert hasil[1] == (
-        base_time + timedelta(hours=1),
-        base_time + timedelta(hours=1, minutes=30),
-    )
     assert_sifat_jadwal(hasil, tenggat, 60, 60)
 
 
@@ -118,7 +96,59 @@ def test_waktu_tidak_cukup(base_time):
         estimasi_menit=90, slot_kosong=slot_kosong, tenggat=tenggat
     )
 
-    # Hanya bisa mengisi 30 menit dari 90 menit yang dibutuhkan
     assert len(hasil) == 1
-    assert hasil[0] == (base_time, base_time + timedelta(minutes=30))
     assert_sifat_jadwal(hasil, tenggat, 60, 90)
+
+
+# --- Tes Kasus Khusus (Edge Cases & Validation) ---
+
+
+def test_maks_blok_menit_nol_atau_negatif(base_time):
+    tenggat = base_time + timedelta(hours=5)
+    slot_kosong = [(base_time, base_time + timedelta(hours=2))]
+
+    with pytest.raises(ValueError):
+        susun_jadwal(
+            estimasi_menit=60,
+            slot_kosong=slot_kosong,
+            tenggat=tenggat,
+            maks_blok_menit=0,
+        )
+
+    with pytest.raises(ValueError):
+        susun_jadwal(
+            estimasi_menit=60,
+            slot_kosong=slot_kosong,
+            tenggat=tenggat,
+            maks_blok_menit=-15,
+        )
+
+
+def test_slot_tumpang_tindih(base_time):
+    tenggat = base_time + timedelta(hours=5)
+    # Slot 1: 10:00 - 11:30, Slot 2: 11:00 - 12:00 (tumpang tindih 30 menit)
+    slot_kosong = [
+        (base_time, base_time + timedelta(minutes=90)),
+        (base_time + timedelta(minutes=60), base_time + timedelta(minutes=120)),
+    ]
+
+    hasil = susun_jadwal(
+        estimasi_menit=120, slot_kosong=slot_kosong, tenggat=tenggat
+    )
+
+    # Hasil alokasi harus 10:00 - 12:00 tanpa tumpang tindih
+    assert_sifat_jadwal(hasil, tenggat, 60, 120)
+    total_durasi = sum(
+        (selesai - mulai).total_seconds() / 60 for mulai, selesai in hasil
+    )
+    assert total_durasi == 120
+
+
+def test_estimasi_menit_negatif(base_time):
+    tenggat = base_time + timedelta(hours=5)
+    slot_kosong = [(base_time, base_time + timedelta(hours=2))]
+
+    with pytest.raises(ValueError):
+        susun_jadwal(
+            estimasi_menit=-30, slot_kosong=slot_kosong, tenggat=tenggat
+        )

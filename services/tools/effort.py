@@ -1,3 +1,5 @@
+import math
+
 MENIT_DASAR = {
     "rangkuman": 90,
     "makalah": 240,
@@ -10,7 +12,7 @@ MENIT_DASAR = {
 def estimate_effort(jenis: str, bobot: float) -> int:
     """Menghitung estimasi waktu pengerjaan tugas dalam satuan menit.
 
-    Rumus: menit_dasar[jenis] * (1 + bobot)
+    Rumus: ceil(menit_dasar[jenis] * (1 + bobot))
     """
     # Validasi jenis tugas
     if jenis not in MENIT_DASAR:
@@ -18,13 +20,13 @@ def estimate_effort(jenis: str, bobot: float) -> int:
             f"Jenis tugas '{jenis}' tidak dikenal. Pilih salah satu dari: {list(MENIT_DASAR.keys())}"
         )
 
-    # Validasi rentang bobot (0.0 sampai 1.0)
-    if bobot < 0.0 or bobot > 1.0:
+    # Validasi rentang bobot (menolak bobot < 0.0, bobot > 1.0, dan float('nan'))
+    if not (0.0 <= bobot <= 1.0):
         raise ValueError(
             f"Bobot harus berada dalam rentang 0.0 sampai 1.0 (diterima: {bobot})"
         )
 
-    # Hitung estimasi menit sesuai rumus spesifikasi
-    estimasi_menit = MENIT_DASAR[jenis] * (1.0 + bobot)
+    # Bulatkan nilai perkalian presisi float sebelum ceil
+    estimasi_mentah = round(MENIT_DASAR[jenis] * (1.0 + bobot), 6)
 
-    return round(estimasi_menit)
+    return math.ceil(estimasi_mentah)
