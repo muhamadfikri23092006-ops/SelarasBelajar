@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-
+import math
 
 def _merge_overlapping_slots(
     slot_kosong: list[tuple[datetime, datetime]]
@@ -67,3 +67,26 @@ def schedule_blocks(
             waktu_sekarang = waktu_selesai_blok
 
     return blok_jadwal
+
+def hitung_menit_tersedia(
+    *,
+    slot_kosong: list[tuple[datetime, datetime]],
+    tenggat: datetime,
+) -> int:
+    """
+    Menghitung total menit waktu kosong efektif sebelum tenggat
+    setelah menggabungkan slot yang tumpang tindih.
+    """
+    if not slot_kosong:
+        return 0
+
+    slot_efektif = _merge_overlapping_slots(slot_kosong)
+    total_menit = 0.0
+
+    for mulai, selesai in slot_efektif:
+        selesai_efektif = min(selesai, tenggat)
+        if mulai >= selesai_efektif:
+            continue
+        total_menit += (selesai_efektif - mulai).total_seconds() / 60.0
+
+    return math.floor(total_menit)
