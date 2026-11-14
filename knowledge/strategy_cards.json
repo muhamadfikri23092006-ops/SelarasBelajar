@@ -1,0 +1,282 @@
+[
+  {
+    "id": "V01",
+    "modality": "Visual",
+    "strategy_name": "Mind Mapping",
+    "description": "Meringkas suatu topik dalam bentuk peta bercabang dari konsep utama ke subkonsep.",
+    "how_to_apply": [
+      "Tulis topik utama di bagian tengah.",
+      "Buat cabang untuk konsep utama yang berkaitan.",
+      "Tambahkan subcabang berisi contoh, definisi, atau rumus.",
+      "Gunakan gambar kecil atau warna untuk membedakan bagian."
+    ],
+    "suitable_for": "Strategi ini dapat dicoba oleh pengguna dengan preferensi Visual untuk membantu melihat gambaran besar suatu materi.",
+    "example_for_college_task": "UTS Basis Data: membuat mind map dengan topik Normalisasi dan cabang 1NF, 2NF, 3NF, dan BCNF."
+  },
+  {
+    "id": "V02",
+    "modality": "Visual",
+    "strategy_name": "Concept Map",
+    "description": "Menyusun konsep dalam kotak atau bentuk visual yang dihubungkan dengan garis atau panah berlabel.",
+    "how_to_apply": [
+      "Tulis konsep utama.",
+      "Tambahkan konsep-konsep yang berkaitan.",
+      "Hubungkan konsep menggunakan garis atau panah.",
+      "Tambahkan label pada hubungan antar konsep."
+    ],
+    "suitable_for": "Strategi ini dapat dicoba oleh pengguna dengan preferensi Visual ketika materi memiliki banyak konsep yang saling berhubungan.",
+    "example_for_college_task": "Sistem Informasi: membuat concept map yang menghubungkan data, informasi, sistem, dan pengambilan keputusan."
+  },
+  {
+    "id": "V03",
+    "modality": "Visual",
+    "strategy_name": "Timeline",
+    "description": "Menyusun tahapan, kejadian, atau aktivitas secara berurutan dalam bentuk garis waktu.",
+    "how_to_apply": [
+      "Tentukan aktivitas atau kejadian yang perlu disusun.",
+      "Urutkan berdasarkan waktu.",
+      "Letakkan setiap aktivitas pada timeline.",
+      "Tambahkan tanggal atau durasi jika diperlukan."
+    ],
+    "suitable_for": "Strategi ini dapat dicoba oleh pengguna dengan preferensi Visual untuk materi yang memiliki urutan tahapan atau untuk mengatur jadwal proyek.",
+    "example_for_college_task": "Tugas besar selama 3 minggu: membuat timeline penelitian, penyusunan draft, revisi, dan pengumpulan."
+  },
+  {
+    "id": "V04",
+    "modality": "Visual",
+    "strategy_name": "Flowchart Proses",
+    "description": "Menggambarkan proses atau logika menggunakan simbol dan panah dalam bentuk flowchart.",
+    "how_to_apply": [
+      "Tentukan proses yang ingin digambarkan.",
+      "Identifikasi langkah-langkah proses.",
+      "Gunakan simbol flowchart yang sesuai.",
+      "Hubungkan setiap langkah menggunakan panah."
+    ],
+    "suitable_for": "Strategi ini dapat dicoba oleh pengguna dengan preferensi Visual untuk materi yang bersifat prosedural, algoritmik, atau memiliki langkah berurutan.",
+    "example_for_college_task": "Pemrograman: membuat flowchart proses pencarian data sebelum mulai menulis kode program."
+  },
+  {
+    "id": "V05",
+    "modality": "Visual",
+    "strategy_name": "Color Coding",
+    "description": "Menggunakan warna berbeda untuk membedakan kategori informasi dalam catatan atau materi.",
+    "how_to_apply": [
+      "Tentukan kategori informasi yang ingin dibedakan.",
+      "Tetapkan satu warna untuk setiap kategori.",
+      "Gunakan warna secara konsisten.",
+      "Hindari menggunakan terlalu banyak warna agar catatan tetap mudah dibaca."
+    ],
+    "suitable_for": "Strategi ini dapat dicoba oleh pengguna dengan preferensi Visual ketika sudah memiliki catatan, slide, atau materi tertulis yang ingin dipelajari kembali.",
+    "example_for_college_task": "Review jurnal: gunakan warna berbeda untuk menandai metode, hasil penelitian, dan keterbatasan penelitian."
+  },
+  {
+    "id": "A01",
+    "modality": "Aural/Auditory",
+    "strategy_name": "Menjelaskan dengan Suara Sendiri",
+    "description": "Menjelaskan kembali suatu topik secara lisan seolah-olah sedang mengajarkannya kepada orang lain.",
+    "how_to_apply": [
+      "Pilih satu topik yang ingin dipahami.",
+      "Jelaskan topik menggunakan kata-kata sendiri.",
+      "Hindari membaca langsung dari catatan.",
+      "Catat bagian yang masih sulit dijelaskan."
+    ],
+    "suitable_for": "Strategi ini dapat dicoba oleh pengguna dengan preferensi Aural/Auditory untuk memeriksa pemahaman terhadap suatu materi.",
+    "example_for_college_task": "Jelaskan perbedaan OSI dan TCP/IP selama 3 menit tanpa melihat slide."
+  },
+  {
+    "id": "A02",
+    "modality": "Aural/Auditory",
+    "strategy_name": "Diskusi Kelompok Terarah",
+    "description": "Mempelajari materi melalui diskusi kelompok kecil dengan pertanyaan dan pembagian peran yang jelas.",
+    "how_to_apply": [
+      "Bentuk kelompok kecil berisi sekitar 2–4 orang.",
+      "Siapkan beberapa pertanyaan sebelum diskusi.",
+      "Setiap anggota bergantian memberikan penjelasan atau pendapat.",
+      "Buat kesimpulan dari hasil diskusi."
+    ],
+    "suitable_for": "Strategi ini dapat dicoba oleh pengguna dengan preferensi Aural/Auditory untuk tugas atau materi yang membutuhkan berbagai sudut pandang.",
+    "example_for_college_task": "Etika Profesi: mendiskusikan kasus pelanggaran etika teknologi dan membandingkan pendapat setiap anggota kelompok."
+  },
+  {
+    "id": "A03",
+    "modality": "Aural/Auditory",
+    "strategy_name": "Rekam dan Dengarkan Ulang",
+    "description": "Merekam penjelasan atau rangkuman materi menggunakan suara sendiri kemudian mendengarkannya kembali.",
+    "how_to_apply": [
+      "Pilih satu topik.",
+      "Buat rangkuman singkat secara lisan.",
+      "Rekam penjelasan selama sekitar 3–5 menit.",
+      "Dengarkan kembali rekaman dan tandai bagian yang belum dipahami."
+    ],
+    "suitable_for": "Strategi ini dapat dicoba oleh pengguna dengan preferensi Aural/Auditory untuk melakukan review tanpa harus terus membaca buku atau catatan.",
+    "example_for_college_task": "Statistika: merekam penjelasan tentang rumus statistik kemudian mendengarkannya kembali saat melakukan review."
+  },
+  {
+    "id": "A04",
+    "modality": "Aural/Auditory",
+    "strategy_name": "Tanya Jawab Berpasangan",
+    "description": "Berlatih memahami dan mengingat materi melalui aktivitas saling memberikan pertanyaan dan jawaban dengan pasangan belajar.",
+    "how_to_apply": [
+      "Siapkan beberapa pertanyaan tentang materi.",
+      "Bergantian memberikan pertanyaan kepada pasangan.",
+      "Jawab tanpa melihat catatan jika memungkinkan.",
+      "Diskusikan jawaban yang masih kurang tepat."
+    ],
+    "suitable_for": "Strategi ini dapat dicoba oleh pengguna dengan preferensi Aural/Auditory untuk persiapan ujian atau latihan mengingat konsep.",
+    "example_for_college_task": "Software Engineering: membuat dan menjawab 10 pertanyaan tentang konsep dasar rekayasa perangkat lunak."
+  },
+  {
+    "id": "A05",
+    "modality": "Aural/Auditory",
+    "strategy_name": "Latihan Presentasi Lisan",
+    "description": "Melatih penyampaian materi secara lisan dengan melakukan simulasi presentasi dan mengatur waktu.",
+    "how_to_apply": [
+      "Susun poin utama yang akan disampaikan.",
+      "Berlatih menjelaskan materi dengan suara keras.",
+      "Gunakan timer untuk mengukur durasi.",
+      "Ulangi latihan dan perbaiki bagian yang masih kurang jelas."
+    ],
+    "suitable_for": "Strategi ini dapat dicoba oleh pengguna dengan preferensi Aural/Auditory untuk tugas presentasi, seminar, atau sidang.",
+    "example_for_college_task": "Presentasi proposal: berlatih presentasi selama 10 menit sebanyak 3 kali sebelum hari presentasi."
+  },
+  {
+    "id": "R01",
+    "modality": "Read/Write",
+    "strategy_name": "Membuat Outline Tugas",
+    "description": "Menyusun kerangka tulisan secara bertingkat sebelum mulai mengerjakan tugas.",
+    "how_to_apply": [
+      "Tentukan topik utama.",
+      "Buat bagian atau bab utama.",
+      "Tambahkan subbagian di bawah setiap bagian.",
+      "Gunakan outline sebagai panduan saat menulis."
+    ],
+    "suitable_for": "Strategi ini dapat dicoba oleh pengguna dengan preferensi Read/Write untuk tugas berupa paper, esai, laporan, atau tulisan akademik.",
+    "example_for_college_task": "Manajemen Proyek: membuat outline paper yang terdiri dari pendahuluan, landasan teori, pembahasan, dan kesimpulan."
+  },
+  {
+    "id": "R02",
+    "modality": "Read/Write",
+    "strategy_name": "Rangkuman dengan Kata Sendiri",
+    "description": "Menulis ulang inti materi menggunakan kata-kata sendiri untuk membantu memahami isi bacaan.",
+    "how_to_apply": [
+      "Baca materi secara keseluruhan.",
+      "Identifikasi ide atau poin penting.",
+      "Tulis kembali menggunakan kata-kata sendiri.",
+      "Bandingkan rangkuman dengan sumber asli untuk memastikan tidak ada konsep penting yang hilang."
+    ],
+    "suitable_for": "Strategi ini dapat dicoba oleh pengguna dengan preferensi Read/Write ketika mempelajari bacaan panjang, jurnal, atau buku teks.",
+    "example_for_college_task": "Meringkas satu jurnal menjadi bagian masalah penelitian, metode, dan hasil penelitian menggunakan kata-kata sendiri."
+  },
+  {
+    "id": "R03",
+    "modality": "Read/Write",
+    "strategy_name": "Catatan Terstruktur Metode Cornell",
+    "description": "Membuat catatan menggunakan format Cornell yang membagi halaman menjadi bagian catatan, pertanyaan atau kata kunci, dan rangkuman.",
+    "how_to_apply": [
+      "Bagi halaman menjadi area catatan utama, kata kunci atau pertanyaan, dan rangkuman.",
+      "Tulis penjelasan utama pada area catatan.",
+      "Tambahkan kata kunci atau pertanyaan di bagian samping.",
+      "Buat rangkuman singkat di bagian bawah."
+    ],
+    "suitable_for": "Strategi ini dapat dicoba oleh pengguna dengan preferensi Read/Write yang ingin membuat catatan terstruktur dan mudah digunakan kembali.",
+    "example_for_college_task": "Sistem Operasi: membuat catatan kuliah menggunakan format Cornell untuk mencatat konsep, istilah penting, dan rangkuman."
+  },
+  {
+    "id": "R04",
+    "modality": "Read/Write",
+    "strategy_name": "Daftar Pertanyaan Belajar",
+    "description": "Mengubah materi menjadi kumpulan pertanyaan tertulis kemudian mencoba menjawabnya.",
+    "how_to_apply": [
+      "Baca materi.",
+      "Ubah poin penting menjadi pertanyaan.",
+      "Tulis jawaban tanpa melihat sumber jika memungkinkan.",
+      "Periksa kembali jawaban menggunakan materi."
+    ],
+    "suitable_for": "Strategi ini dapat dicoba oleh pengguna dengan preferensi Read/Write untuk persiapan ujian atau latihan memahami materi.",
+    "example_for_college_task": "Keamanan Informasi: membuat 15 pertanyaan tertulis dari materi lalu menjawabnya sebagai latihan ujian."
+  },
+  {
+    "id": "R05",
+    "modality": "Read/Write",
+    "strategy_name": "Menulis Ulang dari Ingatan",
+    "description": "Menuliskan kembali informasi yang masih diingat kemudian membandingkannya dengan sumber asli.",
+    "how_to_apply": [
+      "Pelajari materi terlebih dahulu.",
+      "Tutup buku atau sumber belajar.",
+      "Tulis semua informasi yang masih diingat.",
+      "Bandingkan dengan sumber asli dan tandai bagian yang terlupa."
+    ],
+    "suitable_for": "Strategi ini dapat dicoba oleh pengguna dengan preferensi Read/Write untuk memeriksa seberapa banyak materi yang masih dapat diingat.",
+    "example_for_college_task": "UML: menulis dari ingatan jenis-jenis diagram UML dan fungsinya, kemudian membandingkan dengan materi."
+  },
+  {
+    "id": "K01",
+    "modality": "Kinesthetic",
+    "strategy_name": "Latihan Soal Bertahap",
+    "description": "Mempelajari materi melalui latihan soal yang disusun dari tingkat mudah ke tingkat lebih sulit.",
+    "how_to_apply": [
+      "Mulai dari soal yang paling mudah.",
+      "Kerjakan tanpa melihat pembahasan terlebih dahulu.",
+      "Periksa kesalahan setelah selesai.",
+      "Naikkan tingkat kesulitan secara bertahap."
+    ],
+    "suitable_for": "Strategi ini dapat dicoba oleh pengguna dengan preferensi Kinesthetic untuk materi yang membutuhkan latihan dan penerapan rumus atau prosedur.",
+    "example_for_college_task": "Kalkulus: mengerjakan 10 soal dari tingkat dasar hingga sulit dan menganalisis kesalahan pada setiap soal."
+  },
+  {
+    "id": "K02",
+    "modality": "Kinesthetic",
+    "strategy_name": "Simulasi atau Role Play",
+    "description": "Mempelajari konsep melalui simulasi situasi nyata atau bermain peran.",
+    "how_to_apply": [
+      "Tentukan situasi yang ingin disimulasikan.",
+      "Bagi peran kepada setiap peserta.",
+      "Lakukan simulasi sesuai skenario.",
+      "Evaluasi hasil simulasi dan diskusikan hal yang perlu diperbaiki."
+    ],
+    "suitable_for": "Strategi ini dapat dicoba oleh pengguna dengan preferensi Kinesthetic untuk materi yang berkaitan dengan komunikasi, negosiasi, atau prosedur layanan.",
+    "example_for_college_task": "Analisis Sistem: melakukan role play wawancara antara analis sistem dan pengguna untuk menggali kebutuhan sistem."
+  },
+  {
+    "id": "K03",
+    "modality": "Kinesthetic",
+    "strategy_name": "Analisis Studi Kasus",
+    "description": "Menerapkan teori yang dipelajari pada kasus nyata atau kasus yang dibuat menyerupai situasi nyata.",
+    "how_to_apply": [
+      "Pilih sebuah kasus.",
+      "Identifikasi masalah utama.",
+      "Hubungkan masalah dengan teori yang dipelajari.",
+      "Tentukan solusi berdasarkan teori tersebut."
+    ],
+    "suitable_for": "Strategi ini dapat dicoba oleh pengguna dengan preferensi Kinesthetic untuk materi yang membutuhkan penerapan teori ke situasi nyata.",
+    "example_for_college_task": "Keamanan Informasi: menganalisis kasus kebocoran data dan menghubungkannya dengan konsep keamanan informasi."
+  },
+  {
+    "id": "K04",
+    "modality": "Kinesthetic",
+    "strategy_name": "Membuat Prototype",
+    "description": "Mempelajari konsep melalui pembuatan contoh sederhana dari produk, desain, sistem, atau program.",
+    "how_to_apply": [
+      "Tentukan bagian yang ingin dibuat.",
+      "Buat versi sederhana terlebih dahulu.",
+      "Uji hasil prototype.",
+      "Catat masalah dan lakukan perbaikan."
+    ],
+    "suitable_for": "Strategi ini dapat dicoba oleh pengguna dengan preferensi Kinesthetic untuk tugas yang berkaitan dengan desain atau pengembangan.",
+    "example_for_college_task": "Interaksi Manusia dan Komputer: membuat paper prototype sederhana untuk rancangan antarmuka aplikasi."
+  },
+  {
+    "id": "K05",
+    "modality": "Kinesthetic",
+    "strategy_name": "Praktik Langsung dengan Alat Nyata",
+    "description": "Belajar dengan menggunakan software atau alat secara langsung, mencoba berbagai parameter, dan mengamati hasilnya.",
+    "how_to_apply": [
+      "Pilih alat atau software yang berkaitan dengan materi.",
+      "Ikuti contoh dasar terlebih dahulu.",
+      "Ubah parameter atau langkah tertentu.",
+      "Amati dan catat perubahan hasil."
+    ],
+    "suitable_for": "Strategi ini dapat dicoba oleh pengguna dengan preferensi Kinesthetic untuk mata kuliah yang membutuhkan penggunaan alat atau software secara langsung.",
+    "example_for_college_task": "Basis Data: mencoba query MySQL dengan kondisi WHERE yang berbeda dan mengamati perubahan hasil query."
+  }
+]
