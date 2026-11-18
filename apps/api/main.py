@@ -8,7 +8,14 @@ from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel, ConfigDict
 
 from services.agent.planner import plan_task
-from services.storage.db import get_profile, init_db, save_profile
+from services.storage.db import (
+    create_task,
+    get_profile,
+    get_task,
+    init_db,
+    list_tasks,
+    save_profile,
+)
 
 app = FastAPI(title="SelarasBelajar API")
 
@@ -147,3 +154,83 @@ def read_profile_endpoint(
             detail=f"Profil dengan user_id '{user_id}' tidak ditemukan.",
         )
     return profil
+# --- Skema Pydantic Tugas ---
+
+
+class TaskIn(BaseModel):
+    user_id: str
+    judul: str
+    jenis: str
+    bobot: float
+    tenggat: datetime
+
+
+class TaskOut(BaseModel):
+    id: int
+    user_id: str
+    judul: str
+    jenis: str
+    bobot: float
+    tenggat: str
+    status: str
+    blok: list[BlokOut] 
+
+
+def _format_task_out(tugas: dict) -> dict:
+    """Konversi objek datetime pada dict tugas menjadi teks ISO untuk respons API."""
+    return {
+        "id": tugas["id"],
+        "user_id": tugas["user_id"],
+        "judul": tugas["judul"],
+        "jenis": tugas["jenis"],
+        "bobot": tugas["bobot"],
+        "tenggat": tugas["tenggat"].isoformat(),
+        "status": tugas["status"],
+        "blok": [
+            {"mulai": mulai.isoformat(), "selesai": selesai.isoformat()}
+            for mulai, selesai in tugas["blok"]
+        ],
+    }
+
+
+# --- Endpoint Tugas ---
+
+
+@app.post("/api/v1/tasks", response_model=TaskOut, status_code=201)
+def create_task_endpoint(
+    req: TaskIn,
+    koneksi: sqlite3.Connection = Depends(get_koneksi),
+):
+    if get_profile(koneksi, user_id=req.user_id) is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Profil dengan user_id '{req.user_id}' tidak ditemukan.",
+        )
+
+    try:
+        tugas_id = create_task(
+            koneksi,
+            user_id=req.user_id,
+            judul=req.judul,
+            jenis=req.jenis,
+            bobot=req.bobot,
+            tenggat=req.tenggat,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    tugas_baru = get_task(koneksi, tugas_id=tugas_id)
+    if tugas_baru is None:
+        raise HTTPException(
+            status_code=500, detail="Tugas gagal dimuat setelah dibuat."
+        )
+    return _format_task_out(tugas_baru)
+
+
+@app.get("/api/v1/tasks", response_model=list[TaskOut])
+def list_tasks_endpoint(
+    user_id: str,
+    koneksi: sqlite3.Connection = Depends(get_koneksi),
+):
+    daftar_tugas = list_tasks(koneksi, user_id=user_id)
+    return [_format_task_out(t) for t in daftar_tugas]
