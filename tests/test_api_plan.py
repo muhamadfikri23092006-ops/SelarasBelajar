@@ -21,8 +21,9 @@ def test_plan_valid():
     assert r.status_code == 200
 
     data = r.json()
-    assert data["status"] == "SELESAI"
+    assert data["status"] == "TERJADWAL"
     assert data["estimasi_menit"] == 60
+    assert data["dasar"] == {"menit_dasar": 60, "bobot": 0.0}
     assert data["menit_tersedia"] == 120
     assert data["kecukupan"]["cukup"] is True
     assert data["verifikasi"] == {"valid": True, "pelanggaran": []}

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from services.tools.effort import estimate_effort
+from services.tools.effort import MENIT_DASAR, estimate_effort
 from services.tools.capacity import check_capacity
 from services.tools.scheduler import hitung_menit_tersedia, schedule_blocks
 from services.verifier.schedule_check import verify_schedule
@@ -55,12 +55,16 @@ def plan_task(
     elif not kecukupan["cukup"]:
         status = "WAKTU_TIDAK_CUKUP"
     else:
-        status = "SELESAI"
+        status = "TERJADWAL"
 
     # TODO 7: kembalikan dict lengkap
     return {
         "status": status,
         "estimasi_menit": estimasi_menit,
+        "dasar": {
+            "menit_dasar": MENIT_DASAR[jenis],
+            "bobot": float(bobot),
+        },
         "menit_tersedia": menit_tersedia,
         "kecukupan": kecukupan,
         "blok": blok,

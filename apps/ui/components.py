@@ -1165,11 +1165,11 @@ def render_planner():
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        if status == "SELESAI":
+        if status == "TERJADWAL":
             st.markdown(
                 """
                 <div class='editorial-card editorial-card-highlight' style='background: #F4F9F6;'>
-                    <h4 style='color: #1B6122; margin-top: 0; margin-bottom: 0.35rem;'>Status: SELESAI &mdash; Jadwal Berhasil Dirancang</h4>
+                    <h4 style='color: #1B6122; margin-top: 0; margin-bottom: 0.35rem;'>Status: TERJADWAL &mdash; Jadwal Berhasil Dirancang</h4>
                     <p style='color: #38424D; font-size: 0.9rem; margin: 0;'>
                         Seluruh kebutuhan waktu tugas berhasil dialokasikan ke dalam jendela waktu luang dan memenuhi semua aturan constraint verifier.
                     </p>
