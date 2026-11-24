@@ -4,6 +4,7 @@ import pytest
 
 from services.storage.db import (
     create_task,
+    delete_profile,
     get_profile,
     get_task,
     init_db,
@@ -131,6 +132,7 @@ def test_create_task_valid_mengembalikan_id_dan_status_baru():
     tugas = get_task(koneksi, tugas_id=tugas_id)
     assert tugas is not None
     assert tugas["status"] == "BARU"
+    assert tugas["status_rencana"] == "BELUM_DIRENCANAKAN"
     assert tugas["tenggat"] == tenggat
     assert tugas["blok"] == []
 
@@ -189,12 +191,13 @@ def test_save_blocks_lalu_get_task_mengembalikan_tuple_datetime_terurut():
         koneksi,
         tugas_id=tugas_id,
         blok=[blok_kedua, blok_pertama],
-        status="SELESAI",
+        status_rencana="TERJADWAL",
     )
 
     tugas = get_task(koneksi, tugas_id=tugas_id)
     assert tugas is not None
-    assert tugas["status"] == "SELESAI"
+    assert tugas["status"] == "BARU"
+    assert tugas["status_rencana"] == "TERJADWAL"
     assert tugas["blok"] == [blok_pertama, blok_kedua]
 
 
@@ -218,8 +221,8 @@ def test_save_blocks_dua_kali_hanya_blok_terbaru_tersisa():
     blok_lama = [(datetime(2026, 11, 20, 8, 0), datetime(2026, 11, 20, 9, 0))]
     blok_baru = [(datetime(2026, 11, 22, 10, 0), datetime(2026, 11, 22, 11, 30))]
 
-    save_blocks(koneksi, tugas_id=tugas_id, blok=blok_lama, status="SELESAI")
-    save_blocks(koneksi, tugas_id=tugas_id, blok=blok_baru, status="SELESAI")
+    save_blocks(koneksi, tugas_id=tugas_id, blok=blok_lama, status_rencana="TERJADWAL")
+    save_blocks(koneksi, tugas_id=tugas_id, blok=blok_baru, status_rencana="TERJADWAL")
 
     tugas = get_task(koneksi, tugas_id=tugas_id)
     assert tugas is not None
@@ -233,7 +236,7 @@ def test_save_blocks_pada_tugas_id_tak_ada_mengangkat_value_error():
             koneksi,
             tugas_id=9999,
             blok=[(datetime(2026, 11, 20, 9, 0), datetime(2026, 11, 20, 10, 0))],
-            status="SELESAI",
+            status_rencana="TERJADWAL",
         )
 
 
@@ -274,6 +277,7 @@ def test_list_tasks_terurut_menurut_tenggat():
     daftar = list_tasks(koneksi, user_id="u01")
     assert [t["id"] for t in daftar] == [id_dekat, id_sedang, id_jauh]
 
+
 def test_save_profile_upsert_tidak_mengubah_dibuat_pada():
     koneksi = init_db()
     save_profile(
@@ -296,7 +300,103 @@ def test_save_profile_upsert_tidak_mengubah_dibuat_pada():
     assert profil_akhir["dibuat_pada"] == profil_awal["dibuat_pada"]
 
 
-def test_save_blocks_status_tidak_valid_mengangkat_value_error():
+# --- Tugas 11A: Skema dan Status ---
+
+
+def test_create_task_matkul_default_dan_kustom():
+    koneksi = init_db()
+    save_profile(
+        koneksi,
+        user_id="u01",
+        nama="Fikri",
+        skor={"visual": 5, "aural": 5, "read_write": 5, "kinestetik": 5},
+    )
+    tenggat = datetime(2026, 11, 27, 20, 0)
+
+    id_tanpa_matkul = create_task(
+        koneksi,
+        user_id="u01",
+        judul="Tugas Tanpa Matkul",
+        jenis=JENIS_VALID,
+        bobot=0.4,
+        tenggat=tenggat,
+    )
+    id_dengan_matkul = create_task(
+        koneksi,
+        user_id="u01",
+        judul="Analisis Wireshark",
+        jenis=JENIS_VALID,
+        bobot=0.6,
+        tenggat=tenggat,
+        matkul="Keamanan Informasi",
+    )
+
+    tugas_1 = get_task(koneksi, tugas_id=id_tanpa_matkul)
+    tugas_2 = get_task(koneksi, tugas_id=id_dengan_matkul)
+    assert tugas_1 is not None and tugas_1["matkul"] == ""
+    assert tugas_2 is not None and tugas_2["matkul"] == "Keamanan Informasi"
+
+    daftar = list_tasks(koneksi, user_id="u01")
+    by_id = {t["id"]: t for t in daftar}
+    assert by_id[id_tanpa_matkul]["matkul"] == ""
+    assert by_id[id_dengan_matkul]["matkul"] == "Keamanan Informasi"
+
+
+def test_create_task_status_pengerjaan_dan_rencana_awal():
+    koneksi = init_db()
+    save_profile(
+        koneksi,
+        user_id="u01",
+        nama="Fikri",
+        skor={"visual": 5, "aural": 5, "read_write": 5, "kinestetik": 5},
+    )
+    tugas_id = create_task(
+        koneksi,
+        user_id="u01",
+        judul="Tugas Awal",
+        jenis=JENIS_VALID,
+        bobot=0.5,
+        tenggat=datetime(2026, 11, 27, 20, 0),
+    )
+
+    tugas = get_task(koneksi, tugas_id=tugas_id)
+    assert tugas is not None
+    assert tugas["status"] == "BARU"
+    assert tugas["status_rencana"] == "BELUM_DIRENCANAKAN"
+
+
+def test_save_blocks_hanya_mengubah_status_rencana_tidak_menyentuh_status():
+    koneksi = init_db()
+    save_profile(
+        koneksi,
+        user_id="u01",
+        nama="Fikri",
+        skor={"visual": 5, "aural": 5, "read_write": 5, "kinestetik": 5},
+    )
+    tugas_id = create_task(
+        koneksi,
+        user_id="u01",
+        judul="Simulasi Jadwal",
+        jenis=JENIS_VALID,
+        bobot=0.5,
+        tenggat=datetime(2026, 11, 27, 20, 0),
+    )
+
+    save_blocks(
+        koneksi,
+        tugas_id=tugas_id,
+        blok=[(datetime(2026, 11, 25, 9, 0), datetime(2026, 11, 25, 10, 0))],
+        status_rencana="TERJADWAL",
+    )
+
+    tugas = get_task(koneksi, tugas_id=tugas_id)
+    assert tugas is not None
+    assert tugas["status"] == "BARU"
+    assert tugas["status_rencana"] == "TERJADWAL"
+
+
+@pytest.mark.parametrize("status_invalid", ["SELESAI", "ASAL"])
+def test_save_blocks_status_rencana_tidak_valid_mengangkat_value_error(status_invalid):
     koneksi = init_db()
     save_profile(
         koneksi,
@@ -318,5 +418,43 @@ def test_save_blocks_status_tidak_valid_mengangkat_value_error():
             koneksi,
             tugas_id=tugas_id,
             blok=[(datetime(2026, 11, 20, 9, 0), datetime(2026, 11, 20, 10, 0))],
-            status="ASAL",
+            status_rencana=status_invalid,
         )
+
+
+def test_delete_profile_menghapus_profil_tugas_dan_blok_secara_cascade():
+    koneksi = init_db()
+    save_profile(
+        koneksi,
+        user_id="u01",
+        nama="Fikri",
+        skor={"visual": 5, "aural": 5, "read_write": 5, "kinestetik": 5},
+    )
+    tugas_id = create_task(
+        koneksi,
+        user_id="u01",
+        judul="Tugas Cascade",
+        jenis=JENIS_VALID,
+        bobot=0.5,
+        tenggat=datetime(2026, 11, 27, 20, 0),
+        matkul="Manajemen Proyek",
+    )
+    save_blocks(
+        koneksi,
+        tugas_id=tugas_id,
+        blok=[(datetime(2026, 11, 25, 10, 0), datetime(2026, 11, 25, 11, 0))],
+        status_rencana="TERJADWAL",
+    )
+
+    terhapus = delete_profile(koneksi, user_id="u01")
+    assert terhapus is True
+    assert get_profile(koneksi, user_id="u01") is None
+    assert get_task(koneksi, tugas_id=tugas_id) is None
+
+    sisa_blok = koneksi.execute("SELECT COUNT(*) AS jumlah FROM blok_jadwal;").fetchone()
+    assert sisa_blok["jumlah"] == 0
+
+
+def test_delete_profile_user_tidak_ada_mengembalikan_false():
+    koneksi = init_db()
+    assert delete_profile(koneksi, user_id="user_tidak_ada") is False
