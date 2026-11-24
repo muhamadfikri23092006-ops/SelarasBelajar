@@ -35,6 +35,11 @@ class VerifikasiOut(BaseModel):
     pelanggaran: list[str]
 
 
+class DasarOut(BaseModel):
+    menit_dasar: int
+    bobot: float
+
+
 class PlanRequest(BaseModel):
     jenis: str
     bobot: float
@@ -46,6 +51,7 @@ class PlanRequest(BaseModel):
 class PlanResponse(BaseModel):
     status: str
     estimasi_menit: int
+    dasar: DasarOut
     menit_tersedia: int
     kecukupan: dict[str, Any]
     blok: list[BlokOut]
@@ -78,11 +84,13 @@ def buat_rencana(req: PlanRequest) -> PlanResponse:
     return PlanResponse(
         status=hasil["status"],
         estimasi_menit=hasil["estimasi_menit"],
+        dasar=DasarOut(**hasil["dasar"]),
         menit_tersedia=hasil["menit_tersedia"],
         kecukupan=hasil["kecukupan"],
         blok=blok_keluaran,
         verifikasi=VerifikasiOut(**hasil["verifikasi"]),
     )
+
 
 def get_koneksi() -> Generator[sqlite3.Connection, None, None]:
     db_path = os.getenv("SELARAS_DB", "selaras.db")
@@ -91,6 +99,7 @@ def get_koneksi() -> Generator[sqlite3.Connection, None, None]:
         yield koneksi
     finally:
         koneksi.close()
+
 
 # --- Skema Pydantic Profil VARK ---
 
@@ -114,6 +123,7 @@ class ProfileResponse(BaseModel):
     nama: str
     skor: SkorVARK
     dibuat_pada: str
+
 
 # --- Endpoint Profil ---
 
@@ -154,6 +164,8 @@ def read_profile_endpoint(
             detail=f"Profil dengan user_id '{user_id}' tidak ditemukan.",
         )
     return profil
+
+
 # --- Skema Pydantic Tugas ---
 
 
@@ -173,7 +185,7 @@ class TaskOut(BaseModel):
     bobot: float
     tenggat: str
     status: str
-    blok: list[BlokOut] 
+    blok: list[BlokOut]
 
 
 def _format_task_out(tugas: dict) -> dict:
