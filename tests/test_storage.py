@@ -11,6 +11,7 @@ from services.storage.db import (
     list_tasks,
     save_blocks,
     save_profile,
+    update_task_status,
 )
 from services.tools.effort import MENIT_DASAR
 
@@ -458,3 +459,58 @@ def test_delete_profile_menghapus_profil_tugas_dan_blok_secara_cascade():
 def test_delete_profile_user_tidak_ada_mengembalikan_false():
     koneksi = init_db()
     assert delete_profile(koneksi, user_id="user_tidak_ada") is False
+
+# --- Tugas 11C: update_task_status ---
+
+
+def test_update_task_status_mengubah_status_tanpa_mengubah_status_rencana():
+    koneksi = init_db()
+    save_profile(
+        koneksi,
+        user_id="u01",
+        nama="Fikri",
+        skor={"visual": 5, "aural": 5, "read_write": 5, "kinestetik": 5},
+    )
+    tugas_id = create_task(
+        koneksi,
+        user_id="u01",
+        judul="Implementasi API",
+        jenis=JENIS_VALID,
+        bobot=0.5,
+        tenggat=datetime(2026, 11, 27, 20, 0),
+    )
+
+    diubah = update_task_status(koneksi, tugas_id=tugas_id, status="DIKERJAKAN")
+    assert diubah is True
+
+    tugas = get_task(koneksi, tugas_id=tugas_id)
+    assert tugas is not None
+    assert tugas["status"] == "DIKERJAKAN"
+    assert tugas["status_rencana"] == "BELUM_DIRENCANAKAN"
+
+
+@pytest.mark.parametrize("status_tidak_sah", ["TERJADWAL", "ASAL"])
+def test_update_task_status_tidak_sah_mengangkat_value_error(status_tidak_sah):
+    koneksi = init_db()
+    save_profile(
+        koneksi,
+        user_id="u01",
+        nama="Fikri",
+        skor={"visual": 5, "aural": 5, "read_write": 5, "kinestetik": 5},
+    )
+    tugas_id = create_task(
+        koneksi,
+        user_id="u01",
+        judul="Validasi Status",
+        jenis=JENIS_VALID,
+        bobot=0.5,
+        tenggat=datetime(2026, 11, 27, 20, 0),
+    )
+
+    with pytest.raises(ValueError):
+        update_task_status(koneksi, tugas_id=tugas_id, status=status_tidak_sah)
+
+
+def test_update_task_status_id_tak_ada_mengembalikan_false():
+    koneksi = init_db()
+    assert update_task_status(koneksi, tugas_id=9999, status="SELESAI") is False
