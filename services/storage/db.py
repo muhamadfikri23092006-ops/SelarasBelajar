@@ -212,6 +212,27 @@ def create_task(
     return int(kursor.lastrowid)
 
 
+def update_task_status(
+    koneksi: sqlite3.Connection,
+    *,
+    tugas_id: int,
+    status: str,
+) -> bool:
+    """Mengubah status pengerjaan tugas tanpa menyentuh status_rencana."""
+    if status not in VALID_STATUS_TUGAS:
+        raise ValueError(
+            f"Status pengerjaan '{status}' tidak valid. "
+            f"Harus salah satu dari {sorted(VALID_STATUS_TUGAS)}."
+        )
+
+    with koneksi:
+        kursor = koneksi.execute(
+            "UPDATE tugas SET status = ? WHERE id = ?;",
+            (status, tugas_id),
+        )
+    return kursor.rowcount > 0
+
+
 def save_blocks(
     koneksi: sqlite3.Connection,
     *,

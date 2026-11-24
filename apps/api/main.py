@@ -15,6 +15,7 @@ from services.storage.db import (
     init_db,
     list_tasks,
     save_profile,
+    update_task_status,
 )
 
 app = FastAPI(title="SelarasBelajar API")
@@ -172,19 +173,26 @@ def read_profile_endpoint(
 class TaskIn(BaseModel):
     user_id: str
     judul: str
+    matkul: str = ""
     jenis: str
     bobot: float
     tenggat: datetime
+
+
+class TaskStatusUpdate(BaseModel):
+    status: str
 
 
 class TaskOut(BaseModel):
     id: int
     user_id: str
     judul: str
+    matkul: str
     jenis: str
     bobot: float
     tenggat: str
     status: str
+    status_rencana: str
     blok: list[BlokOut]
 
 
@@ -194,10 +202,12 @@ def _format_task_out(tugas: dict) -> dict:
         "id": tugas["id"],
         "user_id": tugas["user_id"],
         "judul": tugas["judul"],
+        "matkul": tugas["matkul"],
         "jenis": tugas["jenis"],
         "bobot": tugas["bobot"],
         "tenggat": tugas["tenggat"].isoformat(),
         "status": tugas["status"],
+        "status_rencana": tugas["status_rencana"],
         "blok": [
             {"mulai": mulai.isoformat(), "selesai": selesai.isoformat()}
             for mulai, selesai in tugas["blok"]
@@ -224,6 +234,7 @@ def create_task_endpoint(
             koneksi,
             user_id=req.user_id,
             judul=req.judul,
+            matkul=req.matkul,
             jenis=req.jenis,
             bobot=req.bobot,
             tenggat=req.tenggat,
@@ -246,3 +257,46 @@ def list_tasks_endpoint(
 ):
     daftar_tugas = list_tasks(koneksi, user_id=user_id)
     return [_format_task_out(t) for t in daftar_tugas]
+
+
+@app.get("/api/v1/tasks/{tugas_id}", response_model=TaskOut)
+def get_task_endpoint(
+    tugas_id: int,
+    koneksi: sqlite3.Connection = Depends(get_koneksi),
+):
+    tugas = get_task(koneksi, tugas_id=tugas_id)
+    if tugas is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Tugas dengan id {tugas_id} tidak ditemukan.",
+        )
+    return _format_task_out(tugas)
+
+
+@app.patch("/api/v1/tasks/{tugas_id}", response_model=TaskOut)
+def patch_task_status_endpoint(
+    tugas_id: int,
+    req: TaskStatusUpdate,
+    koneksi: sqlite3.Connection = Depends(get_koneksi),
+):
+    try:
+        diubah = update_task_status(
+            koneksi,
+            tugas_id=tugas_id,
+            status=req.status,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    if not diubah:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Tugas dengan id {tugas_id} tidak ditemukan.",
+        )
+
+    tugas_terbaru = get_task(koneksi, tugas_id=tugas_id)
+    if tugas_terbaru is None:
+        raise HTTPException(
+            status_code=500, detail="Tugas gagal dimuat setelah diperbarui."
+        )
+    return _format_task_out(tugas_terbaru)
