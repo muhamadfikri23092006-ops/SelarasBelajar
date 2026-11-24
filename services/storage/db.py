@@ -8,8 +8,18 @@ from typing import Any
 from services.tools.effort import MENIT_DASAR
 
 _KUNCI_VARK = frozenset({"visual", "aural", "read_write", "kinestetik"})
-_STATUS_TUGAS_VALID = frozenset(
-    {"BARU", "SELESAI", "WAKTU_TIDAK_CUKUP", "GAGAL_VERIFIKASI"}
+
+STATUS_PENGERJAAN_DEFAULT = "BARU"
+VALID_STATUS_TUGAS = frozenset({"BARU", "DIKERJAKAN", "SELESAI"})
+
+STATUS_RENCANA_DEFAULT = "BELUM_DIRENCANAKAN"
+VALID_STATUS_RENCANA = frozenset(
+    {
+        "BELUM_DIRENCANAKAN",
+        "TERJADWAL",
+        "WAKTU_TIDAK_CUKUP",
+        "GAGAL_VERIFIKASI",
+    }
 )
 
 
@@ -21,7 +31,7 @@ def init_db(path: str | Path = ":memory:") -> sqlite3.Connection:
 
     with koneksi:
         koneksi.executescript(
-            """
+            f"""
             CREATE TABLE IF NOT EXISTS profil (
                 user_id TEXT PRIMARY KEY,
                 nama TEXT NOT NULL,
@@ -36,11 +46,13 @@ def init_db(path: str | Path = ":memory:") -> sqlite3.Connection:
                 id INTEGER PRIMARY KEY,
                 user_id TEXT NOT NULL,
                 judul TEXT NOT NULL,
+                matkul TEXT NOT NULL DEFAULT '',
                 jenis TEXT NOT NULL,
                 bobot REAL NOT NULL,
                 tenggat TEXT NOT NULL,
-                status TEXT NOT NULL DEFAULT 'BARU',
-                FOREIGN KEY (user_id) REFERENCES profil(user_id)
+                status TEXT NOT NULL DEFAULT '{STATUS_PENGERJAAN_DEFAULT}',
+                status_rencana TEXT NOT NULL DEFAULT '{STATUS_RENCANA_DEFAULT}',
+                FOREIGN KEY (user_id) REFERENCES profil(user_id) ON DELETE CASCADE
             );
 
             CREATE TABLE IF NOT EXISTS blok_jadwal (
@@ -134,6 +146,16 @@ def get_profile(koneksi: sqlite3.Connection, *, user_id: str) -> dict[str, Any] 
     }
 
 
+def delete_profile(koneksi: sqlite3.Connection, *, user_id: str) -> bool:
+    """Menghapus profil beserta seluruh tugas dan blok jadwalnya secara cascade."""
+    with koneksi:
+        kursor = koneksi.execute(
+            "DELETE FROM profil WHERE user_id = ?;",
+            (user_id,),
+        )
+    return kursor.rowcount > 0
+
+
 def create_task(
     koneksi: sqlite3.Connection,
     *,
@@ -142,8 +164,9 @@ def create_task(
     jenis: str,
     bobot: float,
     tenggat: datetime,
+    matkul: str = "",
 ) -> int:
-    """Membuat tugas baru berstatus 'BARU' dan mengembalikan ID integer-nya."""
+    """Membuat tugas baru berstatus 'BARU' dan status_rencana 'BELUM_DIRENCANAKAN'."""
     if not judul or not judul.strip():
         raise ValueError("Judul tugas tidak boleh kosong.")
     if jenis not in MENIT_DASAR:
@@ -156,6 +179,8 @@ def create_task(
         raise ValueError("Bobot tugas harus berada di antara 0 dan 1.")
     if not isinstance(tenggat, datetime):
         raise ValueError("tenggat harus bertipe datetime.")
+    if not isinstance(matkul, str):
+        raise ValueError("matkul harus bertipe str.")
 
     with koneksi:
         cek_profil = koneksi.execute(
@@ -167,15 +192,20 @@ def create_task(
 
         kursor = koneksi.execute(
             """
-            INSERT INTO tugas (user_id, judul, jenis, bobot, tenggat, status)
-            VALUES (?, ?, ?, ?, ?, 'BARU');
+            INSERT INTO tugas (
+                user_id, judul, matkul, jenis, bobot, tenggat, status, status_rencana
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?);
             """,
             (
                 user_id,
                 judul.strip(),
+                matkul.strip(),
                 jenis,
                 float(bobot),
                 tenggat.isoformat(),
+                STATUS_PENGERJAAN_DEFAULT,
+                STATUS_RENCANA_DEFAULT,
             ),
         )
 
@@ -187,12 +217,13 @@ def save_blocks(
     *,
     tugas_id: int,
     blok: list[tuple[datetime, datetime]],
-    status: str,
+    status_rencana: str,
 ) -> None:
-    """Mengganti seluruh blok jadwal milik tugas_id dan memperbarui status tugas secara atomik."""
-    if status not in _STATUS_TUGAS_VALID:
+    """Mengganti seluruh blok jadwal milik tugas_id dan memperbarui status_rencana secara atomik."""
+    if status_rencana not in VALID_STATUS_RENCANA:
         raise ValueError(
-            f"Status '{status}' tidak valid. Harus salah satu dari {sorted(_STATUS_TUGAS_VALID)}."
+            f"status_rencana '{status_rencana}' tidak valid. "
+            f"Harus salah satu dari {sorted(VALID_STATUS_RENCANA)}."
         )
 
     for mulai, selesai in blok:
@@ -227,8 +258,8 @@ def save_blocks(
             )
 
         koneksi.execute(
-            "UPDATE tugas SET status = ? WHERE id = ?;",
-            (status, tugas_id),
+            "UPDATE tugas SET status_rencana = ? WHERE id = ?;",
+            (status_rencana, tugas_id),
         )
 
 
@@ -261,10 +292,12 @@ def _baris_ke_tugas(
         "id": baris["id"],
         "user_id": baris["user_id"],
         "judul": baris["judul"],
+        "matkul": baris["matkul"],
         "jenis": baris["jenis"],
         "bobot": baris["bobot"],
         "tenggat": datetime.fromisoformat(baris["tenggat"]),
         "status": baris["status"],
+        "status_rencana": baris["status_rencana"],
         "blok": _ambil_blok_terurut(koneksi, baris["id"]),
     }
 
@@ -273,7 +306,7 @@ def get_task(koneksi: sqlite3.Connection, *, tugas_id: int) -> dict[str, Any] | 
     """Mengambil detail tugas beserta list tuple blok jadwal (datetime, datetime) terurut."""
     baris = koneksi.execute(
         """
-        SELECT id, user_id, judul, jenis, bobot, tenggat, status
+        SELECT id, user_id, judul, matkul, jenis, bobot, tenggat, status, status_rencana
         FROM tugas
         WHERE id = ?;
         """,
@@ -290,7 +323,7 @@ def list_tasks(koneksi: sqlite3.Connection, *, user_id: str) -> list[dict[str, A
     """Mengambil seluruh tugas milik user_id terurut dari tenggat paling dekat."""
     semua_baris = koneksi.execute(
         """
-        SELECT id, user_id, judul, jenis, bobot, tenggat, status
+        SELECT id, user_id, judul, matkul, jenis, bobot, tenggat, status, status_rencana
         FROM tugas
         WHERE user_id = ?;
         """,
