@@ -248,7 +248,8 @@ def read_profile_endpoint(
 
 
 class TaskIn(BaseModel):
-    user_id: str
+    model_config = ConfigDict(extra="forbid")
+
     judul: str
     matkul: str = ""
     jenis: str
@@ -298,18 +299,13 @@ def _format_task_out(tugas: dict) -> dict:
 @app.post("/api/v1/tasks", response_model=TaskOut, status_code=201)
 def create_task_endpoint(
     req: TaskIn,
+    user_terautentikasi: str = Depends(get_user_saat_ini),
     koneksi: sqlite3.Connection = Depends(get_koneksi),
 ):
-    if get_profile(koneksi, user_id=req.user_id) is None:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Profil dengan user_id '{req.user_id}' tidak ditemukan.",
-        )
-
     try:
         tugas_id = create_task(
             koneksi,
-            user_id=req.user_id,
+            user_id=user_terautentikasi,
             judul=req.judul,
             matkul=req.matkul,
             jenis=req.jenis,
@@ -329,20 +325,21 @@ def create_task_endpoint(
 
 @app.get("/api/v1/tasks", response_model=list[TaskOut])
 def list_tasks_endpoint(
-    user_id: str,
+    user_terautentikasi: str = Depends(get_user_saat_ini),
     koneksi: sqlite3.Connection = Depends(get_koneksi),
 ):
-    daftar_tugas = list_tasks(koneksi, user_id=user_id)
+    daftar_tugas = list_tasks(koneksi, user_id=user_terautentikasi)
     return [_format_task_out(t) for t in daftar_tugas]
 
 
 @app.get("/api/v1/tasks/{tugas_id}", response_model=TaskOut)
 def get_task_endpoint(
     tugas_id: int,
+    user_terautentikasi: str = Depends(get_user_saat_ini),
     koneksi: sqlite3.Connection = Depends(get_koneksi),
 ):
     tugas = get_task(koneksi, tugas_id=tugas_id)
-    if tugas is None:
+    if tugas is None or tugas["user_id"] != user_terautentikasi:
         raise HTTPException(
             status_code=404,
             detail=f"Tugas dengan id {tugas_id} tidak ditemukan.",
@@ -354,22 +351,24 @@ def get_task_endpoint(
 def patch_task_status_endpoint(
     tugas_id: int,
     req: TaskStatusUpdate,
+    user_terautentikasi: str = Depends(get_user_saat_ini),
     koneksi: sqlite3.Connection = Depends(get_koneksi),
 ):
+    tugas = get_task(koneksi, tugas_id=tugas_id)
+    if tugas is None or tugas["user_id"] != user_terautentikasi:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Tugas dengan id {tugas_id} tidak ditemukan.",
+        )
+
     try:
-        diubah = update_task_status(
+        update_task_status(
             koneksi,
             tugas_id=tugas_id,
             status=req.status,
         )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
-
-    if not diubah:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Tugas dengan id {tugas_id} tidak ditemukan.",
-        )
 
     tugas_terbaru = get_task(koneksi, tugas_id=tugas_id)
     if tugas_terbaru is None:
