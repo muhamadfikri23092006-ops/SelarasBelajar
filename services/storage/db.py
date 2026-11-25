@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import secrets
 import sqlite3
 from datetime import datetime
 from pathlib import Path
@@ -39,7 +41,8 @@ def init_db(path: str | Path = ":memory:") -> sqlite3.Connection:
                 skor_aural INTEGER NOT NULL,
                 skor_read_write INTEGER NOT NULL,
                 skor_kinestetik INTEGER NOT NULL,
-                dibuat_pada TEXT NOT NULL
+                dibuat_pada TEXT NOT NULL,
+                token_hash TEXT
             );
 
             CREATE TABLE IF NOT EXISTS tugas (
@@ -154,6 +157,39 @@ def delete_profile(koneksi: sqlite3.Connection, *, user_id: str) -> bool:
             (user_id,),
         )
     return kursor.rowcount > 0
+
+def _hash_token(token: str) -> str:
+    """Menghitung hash SHA-256 hex dari token string."""
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def issue_token(koneksi: sqlite3.Connection, *, user_id: str) -> str:
+    """Membuat token acak 32 byte, menyimpan hash SHA-256-nya, dan mengembalikan token asli."""
+    token_asli = secrets.token_urlsafe(32)
+    token_hash = _hash_token(token_asli)
+
+    with koneksi:
+        kursor = koneksi.execute(
+            "UPDATE profil SET token_hash = ? WHERE user_id = ?;",
+            (token_hash, user_id),
+        )
+        if kursor.rowcount == 0:
+            raise ValueError(f"user_id '{user_id}' tidak terdaftar.")
+
+    return token_asli
+
+
+def get_user_by_token(koneksi: sqlite3.Connection, *, token: str) -> str | None:
+    """Mencari user_id berdasarkan hash SHA-256 token; kembalikan None jika kosong/tidak cocok."""
+    if not isinstance(token, str) or not token.strip():
+        return None
+
+    token_hash = _hash_token(token)
+    baris = koneksi.execute(
+        "SELECT user_id FROM profil WHERE token_hash = ?;",
+        (token_hash,),
+    ).fetchone()
+    return baris["user_id"] if baris is not None else None
 
 
 def create_task(

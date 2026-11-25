@@ -22,3 +22,22 @@ def client(tmp_path):
             yield test_client
     finally:
         app.dependency_overrides.clear()
+
+
+def buat_profil_dengan_token(
+    client: TestClient,
+    user_id: str = "u01",
+    nama: str = "Fikri",
+    skor: dict[str, int] | None = None,
+) -> dict[str, str]:
+    """Membuat profil baru via PUT dan mengembalikan header Authorization Bearer."""
+    if skor is None:
+        skor = {"visual": 8, "aural": 5, "read_write": 7, "kinestetik": 4}
+
+    resp = client.put(
+        f"/api/v1/profile/{user_id}",
+        json={"nama": nama, "skor": skor},
+    )
+    assert resp.status_code == 201
+    token = resp.json()["token"]
+    return {"Authorization": f"Bearer {token}"}

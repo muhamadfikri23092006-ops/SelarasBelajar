@@ -1,21 +1,14 @@
 import pytest
 
 from services.tools.effort import MENIT_DASAR
+from tests.conftest import buat_profil_dengan_token
 
 JENIS_VALID = next(iter(MENIT_DASAR.keys()))
 
 
 def _buat_profil_contoh(client, user_id: str = "u01") -> None:
-    resp = client.put(
-        f"/api/v1/profile/{user_id}",
-        json={
-            "nama": "Fikri",
-            "skor": {"visual": 8, "aural": 5, "read_write": 7, "kinestetik": 4},
-        },
-    )
-    assert resp.status_code == 200
-
-
+    buat_profil_dengan_token(client, user_id=user_id)
+    
 def test_post_task_valid_mengembalikan_201_dan_status_baru(client):
     _buat_profil_contoh(client, "u01")
     payload = {
