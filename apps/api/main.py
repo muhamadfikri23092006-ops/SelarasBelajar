@@ -4,7 +4,7 @@ from collections.abc import Generator
 from datetime import datetime
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import Depends, FastAPI, Header, HTTPException, Response
 from pydantic import BaseModel, ConfigDict
 
 from services.agent.planner import plan_task
@@ -12,7 +12,9 @@ from services.storage.db import (
     create_task,
     get_profile,
     get_task,
+    get_user_by_token,
     init_db,
+    issue_token,
     list_tasks,
     save_profile,
     update_task_status,
@@ -102,6 +104,30 @@ def get_koneksi() -> Generator[sqlite3.Connection, None, None]:
         koneksi.close()
 
 
+def get_user_saat_ini(
+    authorization: str | None = Header(default=None),
+    koneksi: sqlite3.Connection = Depends(get_koneksi),
+) -> str:
+    """Memvalidasi header Authorization: Bearer <token> dan mengembalikan user_id."""
+    unauthorized = HTTPException(
+        status_code=401,
+        detail="Token autentikasi tidak valid atau tidak ditemukan.",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    if not authorization:
+        raise unauthorized
+
+    skema, sep, token = authorization.partition(" ")
+    if skema != "Bearer" or not sep or not token.strip() or " " in token.strip():
+        raise unauthorized
+
+    user_id = get_user_by_token(koneksi, token=token.strip())
+    if user_id is None:
+        raise unauthorized
+
+    return user_id
+
+
 # --- Skema Pydantic Profil VARK ---
 
 
@@ -126,15 +152,58 @@ class ProfileResponse(BaseModel):
     dibuat_pada: str
 
 
+class ProfileCreatedResponse(ProfileResponse):
+    token: str
+
+
 # --- Endpoint Profil ---
 
 
-@app.put("/api/v1/profile/{user_id}", response_model=ProfileResponse)
+@app.put(
+    "/api/v1/profile/{user_id}",
+    response_model=ProfileCreatedResponse | ProfileResponse,
+)
 def upsert_profile_endpoint(
     user_id: str,
     req: ProfileRequest,
+    response: Response,
+    authorization: str | None = Header(default=None),
     koneksi: sqlite3.Connection = Depends(get_koneksi),
 ):
+    profil_lama = get_profile(koneksi, user_id=user_id)
+
+    if profil_lama is None:
+        # Pendaftaran terbuka -> 201 dengan token baru
+        try:
+            save_profile(
+                koneksi,
+                user_id=user_id,
+                nama=req.nama,
+                skor=req.skor.model_dump(),
+            )
+            token_baru = issue_token(koneksi, user_id=user_id)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+        profil = get_profile(koneksi, user_id=user_id)
+        if profil is None:
+            raise HTTPException(
+                status_code=500, detail="Profil gagal dimuat setelah disimpan."
+            )
+        response.status_code = 201
+        return {**profil, "token": token_baru}
+
+    # Profil sudah ada -> wajib autentikasi dan pemilik harus cocok
+    user_terautentikasi = get_user_saat_ini(
+        authorization=authorization,
+        koneksi=koneksi,
+    )
+    if user_terautentikasi != user_id:
+        raise HTTPException(
+            status_code=403,
+            detail="Tidak diizinkan mengubah profil pengguna lain.",
+        )
+
     try:
         save_profile(
             koneksi,
@@ -150,14 +219,22 @@ def upsert_profile_endpoint(
         raise HTTPException(
             status_code=500, detail="Profil gagal dimuat setelah disimpan."
         )
+    response.status_code = 200
     return profil
 
 
 @app.get("/api/v1/profile/{user_id}", response_model=ProfileResponse)
 def read_profile_endpoint(
     user_id: str,
+    user_terautentikasi: str = Depends(get_user_saat_ini),
     koneksi: sqlite3.Connection = Depends(get_koneksi),
 ):
+    if user_terautentikasi != user_id:
+        raise HTTPException(
+            status_code=403,
+            detail="Tidak diizinkan mengakses profil pengguna lain.",
+        )
+
     profil = get_profile(koneksi, user_id=user_id)
     if profil is None:
         raise HTTPException(

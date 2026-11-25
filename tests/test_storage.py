@@ -7,7 +7,9 @@ from services.storage.db import (
     delete_profile,
     get_profile,
     get_task,
+    get_user_by_token,
     init_db,
+    issue_token,
     list_tasks,
     save_blocks,
     save_profile,
@@ -514,3 +516,67 @@ def test_update_task_status_tidak_sah_mengangkat_value_error(status_tidak_sah):
 def test_update_task_status_id_tak_ada_mengembalikan_false():
     koneksi = init_db()
     assert update_task_status(koneksi, tugas_id=9999, status="SELESAI") is False
+
+# --- Tugas 12: issue_token & get_user_by_token ---
+
+
+def test_issue_token_mengembalikan_token_panjang_dan_menyimpan_hash():
+    koneksi = init_db()
+    save_profile(
+        koneksi,
+        user_id="u01",
+        nama="Fikri",
+        skor={"visual": 8, "aural": 5, "read_write": 7, "kinestetik": 4},
+    )
+
+    token = issue_token(koneksi, user_id="u01")
+    assert isinstance(token, str)
+    assert len(token) >= 32
+
+    baris = koneksi.execute(
+        "SELECT token_hash FROM profil WHERE user_id = ?;",
+        ("u01",),
+    ).fetchone()
+    assert baris is not None
+    assert baris["token_hash"] is not None
+    assert baris["token_hash"] != token
+    assert len(baris["token_hash"]) == 64
+
+
+def test_get_user_by_token_valid_salah_dan_kosong():
+    koneksi = init_db()
+    save_profile(
+        koneksi,
+        user_id="u01",
+        nama="Fikri",
+        skor={"visual": 8, "aural": 5, "read_write": 7, "kinestetik": 4},
+    )
+    token = issue_token(koneksi, user_id="u01")
+
+    assert get_user_by_token(koneksi, token=token) == "u01"
+    assert get_user_by_token(koneksi, token="token_ngawur") is None
+    assert get_user_by_token(koneksi, token="") is None
+    assert get_user_by_token(koneksi, token="   ") is None
+
+
+def test_issue_token_user_tidak_ada_mengangkat_value_error():
+    koneksi = init_db()
+    with pytest.raises(ValueError):
+        issue_token(koneksi, user_id="user_hantu")
+
+
+def test_issue_token_dua_kali_mengganti_token_lama():
+    koneksi = init_db()
+    save_profile(
+        koneksi,
+        user_id="u01",
+        nama="Fikri",
+        skor={"visual": 8, "aural": 5, "read_write": 7, "kinestetik": 4},
+    )
+
+    token_pertama = issue_token(koneksi, user_id="u01")
+    token_kedua = issue_token(koneksi, user_id="u01")
+
+    assert token_pertama != token_kedua
+    assert get_user_by_token(koneksi, token=token_pertama) is None
+    assert get_user_by_token(koneksi, token=token_kedua) == "u01"
