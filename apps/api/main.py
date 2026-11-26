@@ -16,6 +16,7 @@ from services.storage.db import (
     init_db,
     issue_token,
     list_tasks,
+    save_blocks,
     save_profile,
     update_task_status,
 )
@@ -51,6 +52,13 @@ class PlanRequest(BaseModel):
     maks_blok_menit: int = 60
 
 
+class TaskPlanRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    slot_kosong: list[SlotIn]
+    maks_blok_menit: int = 60
+
+
 class PlanResponse(BaseModel):
     status: str
     estimasi_menit: int
@@ -61,29 +69,34 @@ class PlanResponse(BaseModel):
     verifikasi: VerifikasiOut
 
 
-@app.post("/api/v1/plan", response_model=PlanResponse)
-def buat_rencana(req: PlanRequest) -> PlanResponse:
-    # 1. Konversi SlotIn (model/dict) menjadi list tuple (datetime, datetime)
-    slot_tuples = [(slot.mulai, slot.selesai) for slot in req.slot_kosong]
-
-    # 2. Panggil logika inti plan_task; tangkap ValueError menjadi HTTP 422
+def _jalankan_rencana(
+    *,
+    jenis: str,
+    bobot: float,
+    slot_kosong: list[SlotIn],
+    tenggat: datetime,
+    maks_blok_menit: int,
+) -> dict[str, Any]:
+    """Menjalankan plan_task dan memetakan ValueError menjadi HTTPException 422."""
+    slot_tuples = [(slot.mulai, slot.selesai) for slot in slot_kosong]
     try:
-        hasil = plan_task(
-            jenis=req.jenis,
-            bobot=req.bobot,
+        return plan_task(
+            jenis=jenis,
+            bobot=bobot,
             slot_kosong=slot_tuples,
-            tenggat=req.tenggat,
-            maks_blok_menit=req.maks_blok_menit,
+            tenggat=tenggat,
+            maks_blok_menit=maks_blok_menit,
         )
     except ValueError as err:
         raise HTTPException(status_code=422, detail=str(err)) from err
 
-    # 3. Konversi blok tuple menjadi list BlokOut / dict ISO string
+
+def _format_plan_response(hasil: dict[str, Any]) -> PlanResponse:
+    """Mengonversi dict hasil plan_task menjadi model PlanResponse."""
     blok_keluaran = [
         BlokOut(mulai=mulai.isoformat(), selesai=selesai.isoformat())
         for mulai, selesai in hasil["blok"]
     ]
-
     return PlanResponse(
         status=hasil["status"],
         estimasi_menit=hasil["estimasi_menit"],
@@ -93,6 +106,18 @@ def buat_rencana(req: PlanRequest) -> PlanResponse:
         blok=blok_keluaran,
         verifikasi=VerifikasiOut(**hasil["verifikasi"]),
     )
+
+
+@app.post("/api/v1/plan", response_model=PlanResponse)
+def buat_rencana(req: PlanRequest) -> PlanResponse:
+    hasil = _jalankan_rencana(
+        jenis=req.jenis,
+        bobot=req.bobot,
+        slot_kosong=req.slot_kosong,
+        tenggat=req.tenggat,
+        maks_blok_menit=req.maks_blok_menit,
+    )
+    return _format_plan_response(hasil)
 
 
 def get_koneksi() -> Generator[sqlite3.Connection, None, None]:
@@ -374,5 +399,81 @@ def patch_task_status_endpoint(
     if tugas_terbaru is None:
         raise HTTPException(
             status_code=500, detail="Tugas gagal dimuat setelah diperbarui."
+        )
+    return _format_task_out(tugas_terbaru)
+
+
+@app.post("/api/v1/tasks/{tugas_id}/plan/preview", response_model=PlanResponse)
+def preview_task_plan_endpoint(
+    tugas_id: int,
+    req: TaskPlanRequest,
+    user_terautentikasi: str = Depends(get_user_saat_ini),
+    koneksi: sqlite3.Connection = Depends(get_koneksi),
+):
+    tugas = get_task(koneksi, tugas_id=tugas_id)
+    if tugas is None or tugas["user_id"] != user_terautentikasi:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Tugas dengan id {tugas_id} tidak ditemukan.",
+        )
+
+    hasil = _jalankan_rencana(
+        jenis=tugas["jenis"],
+        bobot=tugas["bobot"],
+        slot_kosong=req.slot_kosong,
+        tenggat=tugas["tenggat"],
+        maks_blok_menit=req.maks_blok_menit,
+    )
+    return _format_plan_response(hasil)
+
+
+@app.post("/api/v1/tasks/{tugas_id}/plan/confirm", response_model=TaskOut)
+def confirm_task_plan_endpoint(
+    tugas_id: int,
+    req: TaskPlanRequest,
+    user_terautentikasi: str = Depends(get_user_saat_ini),
+    koneksi: sqlite3.Connection = Depends(get_koneksi),
+):
+    tugas = get_task(koneksi, tugas_id=tugas_id)
+    if tugas is None or tugas["user_id"] != user_terautentikasi:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Tugas dengan id {tugas_id} tidak ditemukan.",
+        )
+
+    if tugas["status"] == "SELESAI":
+        raise HTTPException(
+            status_code=409,
+            detail="Tugas yang sudah SELESAI tidak dapat dijadwalkan ulang.",
+        )
+
+    hasil = _jalankan_rencana(
+        jenis=tugas["jenis"],
+        bobot=tugas["bobot"],
+        slot_kosong=req.slot_kosong,
+        tenggat=tugas["tenggat"],
+        maks_blok_menit=req.maks_blok_menit,
+    )
+
+    if hasil["status"] != "TERJADWAL":
+        raise HTTPException(
+            status_code=409,
+            detail=f"Penjadwalan gagal dengan status '{hasil['status']}'.",
+        )
+
+    try:
+        save_blocks(
+            koneksi,
+            tugas_id=tugas_id,
+            blok=hasil["blok"],
+            status_rencana="TERJADWAL",
+        )
+    except ValueError as err:
+        raise HTTPException(status_code=422, detail=str(err)) from err
+
+    tugas_terbaru = get_task(koneksi, tugas_id=tugas_id)
+    if tugas_terbaru is None:
+        raise HTTPException(
+            status_code=500, detail="Tugas gagal dimuat setelah penjadwalan."
         )
     return _format_task_out(tugas_terbaru)
